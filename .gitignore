@@ -23,4 +23,7 @@ run
 runs
 run-data
 
+# vscode
+.vscode
+
 repo
