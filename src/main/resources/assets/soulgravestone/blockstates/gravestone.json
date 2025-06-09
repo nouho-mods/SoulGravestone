@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "soulgravestone:block/gravestone"
+    },
+    "facing=south": {
+      "model": "soulgravestone:block/gravestone",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "soulgravestone:block/gravestone",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "soulgravestone:block/gravestone",
+      "y": 90
+    }
+  }
+}
