@@ -222,7 +222,7 @@ public class GravestoneManager {
                     player.addEffect(new MobEffectInstance(
                         SoulGravestone.SOUL_SHAPE_EFFECT,
                         Config.soulShapeRetrieveDurationTicks,
-                        0, false, true, true));
+                        0, false, false, true));
                 }
 
                 event.setCanceled(true);

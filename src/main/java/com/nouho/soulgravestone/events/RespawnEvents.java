@@ -51,7 +51,9 @@ public class RespawnEvents {
                 player.drop(lodestoneCompass, false);
             }
         }
-    }    //Handles player tick: applies or removes movement speed bonus and invisibility for Soul Shape
+    }    
+    
+    //Handles player tick: applies or removes movement speed bonus and invisibility for Soul Shape
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent.Post event) {
         Player player = event.getEntity();
@@ -119,8 +121,8 @@ public class RespawnEvents {
                 }
             }        
         }
-    }
-
+    }    
+    
     //Handles left-click interactions: prevents block breaking animation from starting
     @SubscribeEvent
     public void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
@@ -137,22 +139,14 @@ public class RespawnEvents {
                 );
             }
         }
-    }    
+    }
     
-    //Handles actual block breaking: prevents block breaking or removes Soul Shape effect
+    //Handles actual block breaking: removes Soul Shape effect when breaking blocks
     @SubscribeEvent
     public void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.getPlayer() instanceof Player player) {
             if (player.hasEffect(SoulGravestone.SOUL_SHAPE_EFFECT)) {
-                if (com.nouho.soulgravestone.Config.soulShapePreventBlockBreaking) {
-                    event.setCanceled(true);
-                    if (!player.level().isClientSide) {
-                        player.displayClientMessage(
-                            Component.literal("§7You cannot break blocks while in Soul Shape"),
-                            true
-                        );
-                    }
-                } else if (com.nouho.soulgravestone.Config.soulShapeRemoveOnBlockBreak) {
+                if (com.nouho.soulgravestone.Config.soulShapeRemoveOnBlockBreak) {
                     player.removeEffect(SoulGravestone.SOUL_SHAPE_EFFECT);
                 }
             }
@@ -179,5 +173,6 @@ public class RespawnEvents {
                 event.setCanceled(true);
             } else {            attacker.removeEffect(SoulGravestone.SOUL_SHAPE_EFFECT);
             }
-        }    }
+        }    
+    }
 }
