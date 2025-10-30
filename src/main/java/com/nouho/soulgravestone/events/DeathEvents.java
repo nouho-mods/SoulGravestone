@@ -52,8 +52,21 @@ public class DeathEvents {
 
         if (shouldCreate) {
             BlockPos gravestonePos = GravestoneManager.findGravestonePosition(player, level, deathPos);
-            boolean created = GravestoneManager.createGravestone(player, level, gravestonePos);
-            gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(gravestonePos, level, created));
+            UUID playerUUID = player.getUUID();
+            
+            // Delay gravestone placement by 2 ticks to avoid destruction by explosions
+            // Using a scheduled task ensures it runs after the explosion has finished
+            level.getServer().tell(new net.minecraft.server.TickTask(
+                level.getServer().getTickCount() + 2,
+                () -> {
+                    boolean created = GravestoneManager.createGravestone(player, level, gravestonePos);
+                    gravestoneInfoMap.put(playerUUID, new GravestoneInfo(gravestonePos, level, created));
+                }
+            ));
+            
+            // Pre-register the gravestone info with created=true assumption
+            // This will be updated by the delayed task
+            gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(gravestonePos, level, true));
         } else {
             // Should not create gravestone
             gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(deathPos, level, false));

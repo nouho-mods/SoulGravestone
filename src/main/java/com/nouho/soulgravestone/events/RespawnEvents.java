@@ -37,18 +37,25 @@ public class RespawnEvents {
     @SubscribeEvent
     public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         Player player = event.getEntity();
-        if (player.level().isClientSide) return;            player.addEffect(new MobEffectInstance(
-            SoulGravestone.SOUL_SHAPE_EFFECT,
-            com.nouho.soulgravestone.Config.soulShapeDurationTicks,
-            0, false, false, true));
-        var gravestonePos = SoulGravestone.getLastGravestonePos(player);
-        var gravestoneLevel = SoulGravestone.getLastGravestoneLevel(player);
-        if (gravestonePos != null && gravestoneLevel != null) {
-            ItemStack lodestoneCompass = new ItemStack(Items.COMPASS);
-            GlobalPos globalPos = GlobalPos.of(gravestoneLevel.dimension(), gravestonePos);
-            lodestoneCompass.set(DataComponents.LODESTONE_TRACKER, new LodestoneTracker(java.util.Optional.of(globalPos), false));
-            if (!player.getInventory().add(lodestoneCompass)) {
-                player.drop(lodestoneCompass, false);
+        if (player.level().isClientSide) return;
+        
+        // Only apply Soul Shape effect and give compass if this is an actual death respawn,
+        // not a dimension change (e.g., returning from the End)
+        if (!event.isEndConquered()) {
+            player.addEffect(new MobEffectInstance(
+                SoulGravestone.SOUL_SHAPE_EFFECT,
+                com.nouho.soulgravestone.Config.soulShapeDurationTicks,
+                0, false, false, true));
+            
+            var gravestonePos = SoulGravestone.getLastGravestonePos(player);
+            var gravestoneLevel = SoulGravestone.getLastGravestoneLevel(player);
+            if (gravestonePos != null && gravestoneLevel != null) {
+                ItemStack lodestoneCompass = new ItemStack(Items.COMPASS);
+                GlobalPos globalPos = GlobalPos.of(gravestoneLevel.dimension(), gravestonePos);
+                lodestoneCompass.set(DataComponents.LODESTONE_TRACKER, new LodestoneTracker(java.util.Optional.of(globalPos), false));
+                if (!player.getInventory().add(lodestoneCompass)) {
+                    player.drop(lodestoneCompass, false);
+                }
             }
         }
     }    
