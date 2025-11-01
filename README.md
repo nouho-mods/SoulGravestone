@@ -15,3 +15,4 @@ This mod is designed to improve the death experience by preventing item loss and
 - Required on both server and client
 - Built in Curios compatibility
 - Avoid using this with other Gravestone mods installed
+- Avoid mods that add item slots other than Curios

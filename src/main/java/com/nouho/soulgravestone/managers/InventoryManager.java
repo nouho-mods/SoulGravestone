@@ -78,6 +78,8 @@ public class InventoryManager {
             !ItemStack.matches(preDeathOffhand, currentOffhand)) {
             gravestoneBE.getInventory().set(40, preDeathOffhand.copy());
         }
+        // CRITICAL: Mark BlockEntity as changed so Minecraft saves it to disk!
+        gravestoneBE.setChanged();
     }
 
     // Restores all gravestone contents (items, XP, Curios) to the specified player.

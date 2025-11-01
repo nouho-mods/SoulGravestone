@@ -90,6 +90,15 @@ public class GravestoneBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(@Nonnull CompoundTag tag, @Nonnull HolderLookup.Provider provider) {
         super.loadAdditional(tag, provider);
+        
+        // Load inventory size first and resize if needed
+        if (tag.contains("InventorySize")) {
+            int savedSize = tag.getInt("InventorySize");
+            if (savedSize != inventory.size()) {
+                inventory = NonNullList.withSize(savedSize, ItemStack.EMPTY);
+            }
+        }
+        
         inventory.clear();
         ContainerHelper.loadAllItems(tag, inventory, provider);
         if (tag.contains("StoredXp")) {
@@ -108,6 +117,7 @@ public class GravestoneBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(@Nonnull CompoundTag tag, @Nonnull HolderLookup.Provider provider) {
         super.saveAdditional(tag, provider);
+        tag.putInt("InventorySize", inventory.size()); // Save current inventory size
         ContainerHelper.saveAllItems(tag, inventory, provider);
         tag.putInt("StoredXp", storedXp);
         tag.putString("PlayerName", playerName);

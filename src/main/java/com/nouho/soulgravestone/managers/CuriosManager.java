@@ -55,7 +55,7 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                 }
             }
         } catch (Exception e) {
-            // Error capturing pre-death Curios items - silent failure
+            com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.capturePreDeathCurios] Error capturing pre-death Curios items for player: " + player.getName().getString(), e);
         }
         
         return preDeathCurios;
@@ -72,27 +72,56 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
         // This fixes the timing issue where newPlayer's Curios inventory is empty during clone event
         var server = newPlayer.level().getServer();
         if (server != null) {
-            server.tell(new net.minecraft.server.TickTask(1, () -> {
-                try {
-                    // Get current Curios state from new player (after 1 tick delay)
-                    List<ItemStack> currentCurios = getCurrentCuriosItems(newPlayer);
-                    
-                    // Compare pre-death vs current state and transfer lost items
-                    transferLostCuriosToGravestone(preDeathCuriosItems, currentCurios, gravestoneBE);
-                    
-                } catch (Exception e) {
-                    // Error in delayed Curios handling - silent failure
-                }
-            }));
+            // Try after 1 tick with retry mechanism
+            attemptCuriosTransferWithRetry(newPlayer, gravestoneBE, preDeathCuriosItems, server, 0);
         } else {
             // Fallback to immediate comparison if server is not available
             try {
                 List<ItemStack> currentCurios = getCurrentCuriosItems(newPlayer);
                 transferLostCuriosToGravestone(preDeathCuriosItems, currentCurios, gravestoneBE);
             } catch (Exception e) {
-                // Error in fallback Curios handling - silent failure
+                com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.handlePlayerCloneCuriosWithComparison] Error in fallback (no server) Curios handling for player: " + newPlayer.getName().getString(), e);
             }
         }
+    }
+
+    //Helper: Attempts to transfer Curios items with retry mechanism if inventory not ready.
+    private static void attemptCuriosTransferWithRetry(Player newPlayer, GravestoneBlockEntity gravestoneBE, 
+            List<ItemStack> preDeathCuriosItems, net.minecraft.server.MinecraftServer server, int attemptCount) {
+        
+        final int maxAttempts = 3;
+        final int delayTicks = attemptCount == 0 ? 1 : 2; // 1 tick first attempt, then 2 ticks per retry
+        
+        server.tell(new net.minecraft.server.TickTask(delayTicks, () -> {
+            try {
+                // Check if Curios inventory is ready
+                var curiosOpt = CuriosApi.getCuriosInventory(newPlayer);
+                
+                if (curiosOpt.isEmpty() || curiosOpt.get().getCurios().isEmpty()) {
+                    // Curios not ready yet
+                    if (attemptCount < maxAttempts) {
+                        // Retry with increased delay
+                        attemptCuriosTransferWithRetry(newPlayer, gravestoneBE, preDeathCuriosItems, server, attemptCount + 1);
+                    } else {
+                        // Max retries reached - give up and log error
+                        com.nouho.soulgravestone.SoulGravestone.LOGGER.error(
+                            "[CuriosManager.attemptCuriosTransferWithRetry] Failed to initialize Curios inventory after " + maxAttempts + " attempts for player: " 
+                            + newPlayer.getName().getString());
+                    }
+                    return;
+                }
+                
+                // Curios ready, proceed with comparison and transfer
+                List<ItemStack> currentCurios = getCurrentCuriosItems(newPlayer);
+                transferLostCuriosToGravestone(preDeathCuriosItems, currentCurios, gravestoneBE);
+                
+            } catch (Exception e) {
+                // Error in delayed Curios handling
+                com.nouho.soulgravestone.SoulGravestone.LOGGER.error(
+                    "[CuriosManager.attemptCuriosTransferWithRetry] Error during Curios transfer attempt " + (attemptCount + 1) + " for player: " 
+                    + newPlayer.getName().getString(), e);
+            }
+        }));
     }
 
     //Gets the total number of Curios slots for a player.
@@ -124,12 +153,14 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                 }
             }
         } catch (Exception e) {
-            // Error getting total Curios slots - silent failure
+            com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.getTotalCuriosSlots] Error getting total Curios slots for player: " + player.getName().getString(), e);
             return 0; // Return 0 on error to avoid issues
         }
         
         return totalSlots;
-    }    //Handles retrieving Curios items from the gravestone when a player opens it.
+    }    
+    
+    //Handles retrieving Curios items from the gravestone when a player opens it.
     public static void handlePlayerRetrieveCurios(Player player, GravestoneBlockEntity gravestoneBE) {        try {
             var curiosInventoryOpt = CuriosApi.getCuriosInventory(player);
             if (!curiosInventoryOpt.isPresent()) return;
@@ -180,14 +211,23 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                             }
                             gravestoneBE.getInventory().set(gravestoneSlot, ItemStack.EMPTY);
                         }
+                    } else {
+                        // Slot doesn't exist anymore (e.g., player removed a Curios-adding item)
+                        // Fallback directly to inventory/ground
+                        if (!player.getInventory().add(storedStack.copy())) {
+                            player.drop(storedStack.copy(), false);
+                        }
+                        gravestoneBE.getInventory().set(gravestoneSlot, ItemStack.EMPTY);
                     }
                 }
             }
             
         } catch (Exception e) {
-            // Error retrieving Curios items - silent failure
+            com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.handlePlayerRetrieveCurios] Error retrieving Curios items from gravestone for player: " + player.getName().getString(), e);
         }
-    }//Helper: Gets the current Curios items from a player (post-respawn state).
+    }
+    
+    //Helper: Gets the current Curios items from a player (post-respawn state).
     private static List<ItemStack> getCurrentCuriosItems(Player player) {
         List<ItemStack> currentCurios = new ArrayList<>();
         
@@ -231,11 +271,13 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                 }
             }
         } catch (Exception e) {
-            // Error getting current Curios items - silent failure
+            com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.getCurrentCuriosItems] Error getting current Curios items for player: " + player.getName().getString(), e);
         }
         
         return currentCurios;
-    }//Helper: Compares pre-death and current Curios inventories to transfer only lost items.
+    }
+    
+    //Helper: Compares pre-death and current Curios inventories to transfer only lost items.
     private static void transferLostCuriosToGravestone(List<ItemStack> preDeathCurios, 
             List<ItemStack> currentCurios, GravestoneBlockEntity gravestoneBE) {
         
@@ -260,11 +302,17 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                     // Store the lost item in its exact position (like armor)
                     gravestoneBE.getInventory().set(gravestoneSlot, preDeathStack.copy());
                 } else {
-                    // Gravestone is full - silent failure
+                    // Gravestone is full - log warning
+                    com.nouho.soulgravestone.SoulGravestone.LOGGER.warn("[CuriosManager.transferLostCuriosToGravestone] Gravestone is full, cannot store Curios item at slot " + slotIndex + ". Item may be lost!");
                     break;
-                }            }
+                }            
+            }
         }
-    }    //Helper class for slot mapping
+        // CRITICAL: Mark BlockEntity as changed so Minecraft saves it to disk!
+        gravestoneBE.setChanged();
+    }
+    
+    //Helper class for slot mapping
     private static class SlotMapping {
         final int slotIndex;
         final boolean isCosmetic;
@@ -283,6 +331,7 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                     return curiosHandler.getStacks().getStackInSlot(slotIndex);
                 }
             } catch (Exception e) {
+                com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.SlotMapping.getStackInSlot] Error getting stack from Curios slot " + slotIndex + " (cosmetic: " + isCosmetic + ")", e);
                 return ItemStack.EMPTY;
             }
         }
@@ -295,7 +344,7 @@ public class CuriosManager {    //Captures the pre-death state of all Curios ite
                     curiosHandler.getStacks().setStackInSlot(slotIndex, stack);
                 }
             } catch (Exception e) {
-                // Failed to set stack - silent failure
+                com.nouho.soulgravestone.SoulGravestone.LOGGER.error("[CuriosManager.SlotMapping.setStackInSlot] Failed to set stack in Curios slot " + slotIndex + " (cosmetic: " + isCosmetic + "): " + stack.getItem().toString(), e);
             }
         }
     }
