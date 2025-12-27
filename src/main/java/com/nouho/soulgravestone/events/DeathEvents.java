@@ -53,20 +53,29 @@ public class DeathEvents {
         if (shouldCreate) {
             BlockPos gravestonePos = GravestoneManager.findGravestonePosition(player, level, deathPos);
             UUID playerUUID = player.getUUID();
+
+            // Pre-register the gravestone info with created=true assumption
+            // This will be updated by the delayed task
+            gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(gravestonePos, level, true));
             
             // Delay gravestone placement by 2 ticks to avoid destruction by explosions
             // Using a scheduled task ensures it runs after the explosion has finished
             level.getServer().tell(new net.minecraft.server.TickTask(
                 level.getServer().getTickCount() + 2,
                 () -> {
+                    // Some mods prevent your death not by preventing your death from occuring
+                    // (like a Totem of Undying preumably does), but by cancelling the LivingDeathEvent.
+                    // While this is kinda weird, it does work in Vanilla Minecraft,
+                    // so we should account for this happening.
+                    if (event.isCanceled()) {
+                        gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(deathPos, level, false));
+                        return;
+                    };
+
                     boolean created = GravestoneManager.createGravestone(player, level, gravestonePos);
                     gravestoneInfoMap.put(playerUUID, new GravestoneInfo(gravestonePos, level, created));
                 }
             ));
-            
-            // Pre-register the gravestone info with created=true assumption
-            // This will be updated by the delayed task
-            gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(gravestonePos, level, true));
         } else {
             // Should not create gravestone
             gravestoneInfoMap.put(player.getUUID(), new GravestoneInfo(deathPos, level, false));
