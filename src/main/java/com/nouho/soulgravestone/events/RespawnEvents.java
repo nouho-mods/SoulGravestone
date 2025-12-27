@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -59,8 +61,8 @@ public class RespawnEvents {
             }
         }
     }    
-    
-    //Handles player tick: applies or removes movement speed bonus and invisibility for Soul Shape
+
+    //Handles player tick: applies invisibility for Soul Shape
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent.Post event) {
         Player player = event.getEntity();
@@ -71,30 +73,58 @@ public class RespawnEvents {
             if (!player.isInvisible()) {
                 player.setInvisible(true);
             }
-            
-            // Apply speed bonus if configured
-            if (com.nouho.soulgravestone.Config.soulShapeSpeedBonus > 0) {
-                var attr = player.getAttribute(Attributes.MOVEMENT_SPEED);
-                if (attr != null && attr.getModifier(SOUL_SHAPE_SPEED_ID) == null) {
-                    attr.addTransientModifier(new AttributeModifier(
-                        SOUL_SHAPE_SPEED_ID,
-                        com.nouho.soulgravestone.Config.soulShapeSpeedBonus,
-                        AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
-                    ));
-                }
-            }
-        } else {
-            // Remove invisibility when effect is not present
-            if (player.isInvisible()) {
-                player.setInvisible(false);
-            }
-            
-            // Remove speed bonus
-            var attr = player.getAttribute(Attributes.MOVEMENT_SPEED);
-            if (attr != null && attr.getModifier(SOUL_SHAPE_SPEED_ID) != null) {
-                attr.removeModifier(SOUL_SHAPE_SPEED_ID);
+        }
+    }
+
+    @SubscribeEvent
+    public void onMobEffectAdded(MobEffectEvent.Added event) {
+        LivingEntity entity = event.getEntity();
+
+        if (entity.level().isClientSide) return;
+
+        if (!event.getEffectInstance().getEffect().equals(SoulGravestone.SOUL_SHAPE_EFFECT)) return;
+
+        // Apply speed bonus if configured
+        if (com.nouho.soulgravestone.Config.soulShapeSpeedBonus > 0) {
+            AttributeInstance attr = entity.getAttribute(Attributes.MOVEMENT_SPEED);
+            if (attr != null && attr.getModifier(SOUL_SHAPE_SPEED_ID) == null) {
+                attr.addTransientModifier(new AttributeModifier(
+                    SOUL_SHAPE_SPEED_ID,
+                    com.nouho.soulgravestone.Config.soulShapeSpeedBonus,
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+                ));
             }
         }
+    }
+
+    @SubscribeEvent
+    public void onMobEffectRemove(MobEffectEvent.Remove event) {
+        LivingEntity entity = event.getEntity();
+
+        if (entity.level().isClientSide) return;
+
+        if (!event.getEffectInstance().getEffect().equals(SoulGravestone.SOUL_SHAPE_EFFECT)) return;
+
+        if (entity.isInvisible()) {
+            entity.setInvisible(false);
+        }
+
+        // Remove speed bonus
+        AttributeInstance attr = entity.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (attr != null && attr.getModifier(SOUL_SHAPE_SPEED_ID) != null) {
+            attr.removeModifier(SOUL_SHAPE_SPEED_ID);
+        }
+    }
+
+    @SubscribeEvent
+    public void onMobEffectExpired(MobEffectEvent.Expired event) {
+        LivingEntity entity = event.getEntity();
+        
+        if (entity.level().isClientSide) return;
+
+        if (!event.getEffectInstance().getEffect().equals(SoulGravestone.SOUL_SHAPE_EFFECT)) return;
+
+        entity.removeEffect(SoulGravestone.SOUL_SHAPE_EFFECT);
     }
 
     //Cancels mob targeting if the player has the Soul Shape effect
