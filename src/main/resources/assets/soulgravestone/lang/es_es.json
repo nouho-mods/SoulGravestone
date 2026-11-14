@@ -1,0 +1,9 @@
+{
+  "effect.soulgravestone.soul_shape": "Forma de alma",
+  "block.soulgravestone.gravestone": "Lápida",
+  "item.soulgravestone.gravestone": "Lápida",
+  "itemGroup.soulgravestone": "Soul Gravestone",
+  "entity.soulgravestone.grave_name": "Tumba de %s",
+  "message.soulgravestone.soul_shape.no_loot_chests": "No puedes abrir cofres de botín en Forma de alma",
+  "message.soulgravestone.soul_shape.no_block_breaking": "No puedes romper bloques en Forma de alma"
+}

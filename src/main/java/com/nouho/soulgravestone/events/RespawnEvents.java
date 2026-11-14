@@ -121,7 +121,7 @@ public class RespawnEvents {
                     event.setCanceled(true);
                     if (!player.level().isClientSide) {
                         player.displayClientMessage(
-                            Component.literal("§7You cannot access loot chests while in Soul Shape"),
+                            Component.translatable("message.soulgravestone.soul_shape.no_loot_chests").withStyle(net.minecraft.ChatFormatting.GRAY),
                             true
                         );
                     }
@@ -141,7 +141,7 @@ public class RespawnEvents {
             event.setCanceled(true);
             if (!player.level().isClientSide) {
                 player.displayClientMessage(
-                    Component.literal("§7You cannot break blocks while in Soul Shape"),
+                    Component.translatable("message.soulgravestone.soul_shape.no_block_breaking").withStyle(net.minecraft.ChatFormatting.GRAY),
                     true
                 );
             }

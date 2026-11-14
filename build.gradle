@@ -170,6 +170,22 @@ sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 
+// Spanish: only es_es.json is kept in src/main/resources. The other Spanish variants are
+// copied from it at build time, because Minecraft does not fall back between language variants.
+var spanishLangVariants = ['es_mx', 'es_ar', 'es_cl', 'es_ve', 'es_uy', 'es_ec']
+var generateSpanishLangVariants = tasks.register("generateSpanishLangVariants", Copy) {
+    var langDir = "assets/${mod_id}/lang"
+    into "build/generated/sources/langVariants"
+    spanishLangVariants.each { variant ->
+        from("src/main/resources/${langDir}/es_es.json") {
+            into langDir
+            rename { "${variant}.json" }
+        }
+    }
+}
+sourceSets.main.resources.srcDir generateSpanishLangVariants
+neoForge.ideSyncTask generateSpanishLangVariants
+
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
     publications {

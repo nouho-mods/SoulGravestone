@@ -111,6 +111,12 @@ public class Config {
     // Load configuration values
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
+        // Only read values when the config is loaded or reloaded, and only for our own spec.
+        // ModConfigEvent.Unloading fires when a world/server stops; reading values then throws
+        // "Cannot get config value before config is loaded".
+        if (event instanceof ModConfigEvent.Unloading || event.getConfig().getSpec() != SPEC) {
+            return;
+        }
         xpRetainRatio = XP_RETAIN_RATIO.get();
         allowGravestoneInWater = ALLOW_GRAVESTONE_IN_WATER.get();
         gravestoneOnLavaDeath = GRAVESTONE_ON_LAVA_DEATH.get();

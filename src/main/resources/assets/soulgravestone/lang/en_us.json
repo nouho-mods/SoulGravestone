@@ -2,5 +2,8 @@
   "effect.soulgravestone.soul_shape": "Soul Shape",
   "block.soulgravestone.gravestone": "Gravestone",
   "item.soulgravestone.gravestone": "Gravestone",
-  "itemGroup.soulgravestone.soul_gravestone_tab": "Soul Gravestone"
+  "itemGroup.soulgravestone": "Soul Gravestone",
+  "entity.soulgravestone.grave_name": "%s's grave",
+  "message.soulgravestone.soul_shape.no_loot_chests": "You cannot access loot chests while in Soul Shape",
+  "message.soulgravestone.soul_shape.no_block_breaking": "You cannot break blocks while in Soul Shape"
 }
