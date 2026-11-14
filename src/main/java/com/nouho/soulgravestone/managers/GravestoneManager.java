@@ -321,7 +321,7 @@ public class GravestoneManager {
             nameDisplay.setNoBasePlate(true); // Remove the base plate
             nameDisplay.setShowArms(false); // Hide arms
             nameDisplay.setSilent(true); // Make it silent
-            nameDisplay.setCustomName(Component.literal(playerName + "'s grave")); // Set the display name
+            nameDisplay.setCustomName(Component.translatable("entity.soulgravestone.grave_name", playerName)); // Set the display name
             nameDisplay.setCustomNameVisible(true); // Make the name always visible
             // Add the armor stand to the world
             level.addFreshEntity(nameDisplay);
